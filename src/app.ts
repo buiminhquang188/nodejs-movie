@@ -11,36 +11,39 @@ import morgan from 'morgan';
 import compression from 'compression';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
-import { createConnection } from 'typeorm';
+import httpStatus from 'http-status';
+import jwt from 'jsonwebtoken';
+
+import { createConnection, getRepository } from 'typeorm';
 import { dbConnection } from '@databases';
 import { Routes } from '@interfaces/routes.interface';
 import errorMiddleware from '@middlewares/error.middleware';
-import { logger, stream } from '@utils/logger';
+import { stream } from '@utils/logger';
+import { Action, useExpressServer } from 'routing-controllers';
+import { DataStoredInToken } from './interfaces/auth.interface';
+import { UserEntity } from './entity/users.entity';
+import { HttpException } from './exceptions/HttpException';
 
 class App {
   public app: express.Application;
   public port: string | number;
   public env: string;
 
-  constructor(routes: Routes[]) {
+  constructor(Controllers: Function[]) {
     this.app = express();
     this.port = process.env.PORT || 3000;
     this.env = process.env.NODE_ENV || 'development';
 
     this.env !== 'test' && this.connectToDatabase();
     this.initializeMiddlewares();
-    this.initializeRoutes(routes);
+    this.initializeRoutes(Controllers);
     this.initializeSwagger();
     this.initializeErrorHandling();
+    this.app.set('trust proxy', true);
   }
 
   public listen() {
-    this.app.listen(this.port, () => {
-      logger.info(`=================================`);
-      logger.info(`======= ENV: ${this.env} =======`);
-      logger.info(`🚀 App listening on the port ${this.port}`);
-      logger.info(`=================================`);
-    });
+    this.app.listen(this.port);
   }
 
   public getServer() {
@@ -52,36 +55,75 @@ class App {
   }
 
   private initializeMiddlewares() {
+    this.app.use(express.json());
     this.app.use(morgan(config.get('log.format'), { stream }));
     this.app.use(cors({ origin: config.get('cors.origin'), credentials: config.get('cors.credentials') }));
     this.app.use(hpp());
     this.app.use(helmet());
     this.app.use(compression());
-    this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
   }
 
-  private initializeRoutes(routes: Routes[]) {
-    routes.forEach(route => {
-      this.app.use('/', route.router);
+  private initializeRoutes(controllers: Function[]) {
+    useExpressServer(this.app, {
+      cors: {
+        origin: config.get('cors.origin'),
+        credentials: config.get('cors.credentials'),
+      },
+      controllers: controllers,
+      defaultErrorHandler: false,
+      authorizationChecker: async (action: Action) => {
+        try {
+          const token = action.request.header('Authorization')?.split('Bearer ')[1] || null;
+          const secretKey: string = config.get('secretKey');
+          const verificationResponse = jwt.verify(token, secretKey) as DataStoredInToken;
+          const userId = verificationResponse.id;
+
+          const userRepository = getRepository(UserEntity);
+          const findUser: UserEntity = await userRepository.findOne(userId);
+          if (findUser) {
+            return true;
+          }
+          throw new HttpException(httpStatus.UNAUTHORIZED, 'User is not permission');
+        } catch (error) {
+          throw new HttpException(httpStatus.UNAUTHORIZED, error.message);
+        }
+      },
     });
   }
 
-  private initializeSwagger() {
-    const options = {
-      swaggerDefinition: {
-        info: {
-          title: 'REST API',
-          version: '1.0.0',
-          description: 'Example docs',
-        },
-      },
-      apis: ['swagger.yaml'],
+  private initializeSwagger(controllers: Function[]) {
+    const { defaultMetadataStorage } = require('class-transformer/cjs/storage');
+
+    const schemas = validationMetadatasToSchemas({
+      classTransformerMetadataStorage: defaultMetadataStorage,
+      refPointerPrefix: '#/components/schemas/',
+    });
+
+    const routingControllersOptions = {
+      controllers: controllers,
     };
 
-    const specs = swaggerJSDoc(options);
-    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+    const storage = getMetadataArgsStorage();
+    const spec = routingControllersToSpec(storage, routingControllersOptions, {
+      components: {
+        schemas,
+        securitySchemes: {
+          BearerAuth: {
+            scheme: 'bearer',
+            type: 'http',
+          },
+        },
+      },
+      info: {
+        description: 'Generated with `THL ONE`',
+        title: 'SAM Server API',
+        version: '1.0.0',
+      },
+    });
+
+    this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
   }
 
   private initializeErrorHandling() {
