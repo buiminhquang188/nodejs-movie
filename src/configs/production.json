@@ -1,0 +1,18 @@
+{
+    "env": "development",
+    "dbConfig": {
+        "host": "btvwtafwedbsiys45obc-mysql.services.clever-cloud.com",
+        "user": "uedxpi9tyeprxoik",
+        "password": "uedxpi9tyeprxoik",
+        "database": "btvwtafwedbsiys45obc"
+    },
+    "secretKey": "MOVIE_NODEJS18",
+    "log": {
+        "format": "dev",
+        "dir": "../logs"
+    },
+    "cors": {
+        "origin": true,
+        "credentials": true
+    }
+}
