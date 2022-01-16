@@ -1,24 +1,31 @@
+import { HttpStatus } from 'http-status';
+import { HttpException } from './../exceptions/HttpException';
 import { NextFunction, Request, Response } from 'express';
 import { CreateUserDto } from '@dtos/users.dto';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import { User } from '@interfaces/users.interface';
 import AuthService from '@services/auth.service';
+import { Authorized, Body, ContentType, Controller, Post, Req, Res } from 'routing-controllers';
+import { Transaction } from 'typeorm';
+import { OpenAPI } from 'routing-controllers-openapi';
 
+@Controller()
 class AuthController {
   public authService = new AuthService();
 
-  public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userData: CreateUserDto = req.body;
-      const signUpUserData: User = await this.authService.signup(userData);
+  @Post('/signUp')
+  @ContentType('application/json')
+  @Body({ required: true })
+  async signUp(@Body() userData: CreateUserDto): Promise<any> {
+    console.log(userData);
+    const signUpUserData: User = await this.authService.signup(userData);
 
-      res.status(201).json({ data: signUpUserData, message: 'signup' });
-    } catch (error) {
-      next(error);
-    }
-  };
+    return signUpUserData;
+  }
 
-  public logIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  @Post('/signIn')
+  @Transaction()
+  async Login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userData: CreateUserDto = req.body;
       const { cookie, findUser } = await this.authService.login(userData);
@@ -28,9 +35,15 @@ class AuthController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  @Post('/logout')
+  @OpenAPI({
+    security: [{ BearerAuth: [] }],
+  })
+  @Authorized()
+  @Transaction()
+  async logOut(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
     try {
       const userData: User = req.user;
       const logOutUserData: User = await this.authService.logout(userData);
@@ -40,7 +53,7 @@ class AuthController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 }
 
 export default AuthController;

@@ -13,13 +13,15 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import httpStatus from 'http-status';
 import jwt from 'jsonwebtoken';
+import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
+import { routingControllersToSpec } from 'routing-controllers-openapi';
 
 import { createConnection, getRepository } from 'typeorm';
 import { dbConnection } from '@databases';
 import { Routes } from '@interfaces/routes.interface';
 import errorMiddleware from '@middlewares/error.middleware';
 import { stream } from '@utils/logger';
-import { Action, useExpressServer } from 'routing-controllers';
+import { Action, Controller, getMetadataArgsStorage, useExpressServer } from 'routing-controllers';
 import { DataStoredInToken } from './interfaces/auth.interface';
 import { UserEntity } from './entity/users.entity';
 import { HttpException } from './exceptions/HttpException';
@@ -37,7 +39,7 @@ class App {
     this.env !== 'test' && this.connectToDatabase();
     this.initializeMiddlewares();
     this.initializeRoutes(Controllers);
-    this.initializeSwagger();
+    this.initializeSwagger(Controllers);
     this.initializeErrorHandling();
     this.app.set('trust proxy', true);
   }
@@ -117,8 +119,8 @@ class App {
         },
       },
       info: {
-        description: 'Generated with `THL ONE`',
-        title: 'SAM Server API',
+        description: 'Movie Booking',
+        title: 'Movie Cinema API',
         version: '1.0.0',
       },
     });

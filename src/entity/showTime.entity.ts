@@ -3,13 +3,13 @@ import { CinemaEntity } from './cinema.entity';
 
 @Entity()
 export class ShowTimeEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
-  @Column()
+  @Column({ type: 'datetime', nullable: false })
   startTime: Date;
 
   @OneToOne(() => CinemaEntity, cinema => cinema.id)
-  @Column()
+  @Column({ type: 'varchar', length: 30, nullable: false })
   cinemaId: string;
 }

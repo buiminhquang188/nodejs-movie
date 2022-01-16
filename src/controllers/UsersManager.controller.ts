@@ -3,7 +3,7 @@ import { CreateUserDto } from '@dtos/users.dto';
 import { User } from '@interfaces/users.interface';
 import userService from '@services/users.service';
 
-class UsersController {
+class UsersManagerController {
   public userService = new userService();
 
   public getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -62,4 +62,4 @@ class UsersController {
   };
 }
 
-export default UsersController;
+export default UsersManagerController;

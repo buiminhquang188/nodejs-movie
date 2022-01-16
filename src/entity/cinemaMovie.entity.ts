@@ -4,14 +4,14 @@ import { MovieEntity } from './movie.entity';
 
 @Entity()
 export class CinemaMovieEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
   @OneToOne(() => CinemaEntity, cinema => cinema.id)
-  @Column()
+  @Column({ type: 'int', nullable: false })
   cinemaId: number;
 
   @OneToOne(() => MovieEntity, movie => movie.id)
-  @Column()
+  @Column({ type: 'int', nullable: false })
   movieId: number;
 }

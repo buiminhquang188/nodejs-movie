@@ -3,19 +3,19 @@ import { CineplexEntity } from './cineplex.entity';
 
 @Entity()
 export class CinemaEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, nullable: false })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, nullable: false })
   address: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, nullable: false })
   image: string;
 
   @OneToOne(() => CineplexEntity, cineplex => cineplex.id)
-  @Column()
+  @Column({ type: 'int', nullable: false })
   cineplexId: number;
 }

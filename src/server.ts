@@ -4,11 +4,13 @@ import 'dotenv/config';
 import App from '@/app';
 import validateEnv from '@utils/validateEnv';
 import AuthController from './controllers/auth.controller';
-import UsersController from './controllers/users.controller';
-import IndexController from './controllers/index.controller';
+import BookingManagerController from './controllers/BookingManager.controller';
+import CinemaManagerController from './controllers/CinemaManager.controller';
+import MovieManagerController from './controllers/MoviesManager.controller';
+import UsersManagerController from './controllers/UsersManager.controller';
 
 validateEnv();
 
-const app = new App([AuthController, UsersController, IndexController]);
+const app = new App([AuthController, UsersManagerController, BookingManagerController, CinemaManagerController, MovieManagerController]);
 
 app.listen();

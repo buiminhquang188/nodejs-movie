@@ -3,22 +3,22 @@ import { ShowTimeEntity } from './showTime.entity';
 
 @Entity()
 export class SeatEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 20, nullable: false })
   name: string;
 
-  @Column()
+  @Column({ type: 'boolean', nullable: false })
   status: boolean;
 
-  @Column()
+  @Column({ type: 'smallint', nullable: false })
   price: number;
 
-  @Column()
+  @Column({ type: 'char', length: 6, nullable: false })
   type: string;
 
   @OneToOne(() => ShowTimeEntity, showTime => showTime.id)
-  @Column()
+  @Column({ type: 'varchar', length: 30, nullable: false })
   showTimeId: string;
 }

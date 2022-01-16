@@ -2,24 +2,24 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class MovieEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, nullable: false })
   movieName: string;
 
-  @Column()
+  @Column({ type: 'datetime', nullable: false })
   startDate: Date;
 
-  @Column()
+  @Column({ type: 'tinyint', nullable: false })
   time: number;
 
-  @Column()
+  @Column({ type: 'tinyint', nullable: false })
   evaluate: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, nullable: false })
   poster: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50, nullable: false })
   trailer: string;
 }

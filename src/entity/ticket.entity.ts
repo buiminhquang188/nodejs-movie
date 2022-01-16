@@ -4,14 +4,14 @@ import { UserEntity } from './users.entity';
 
 @Entity()
 export class TicketEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
   @OneToOne(() => UserEntity, user => user.id)
-  @Column()
+  @Column({ type: 'int', nullable: false })
   userId: number;
 
   @OneToOne(() => MovieEntity, movie => movie.id)
-  @Column()
+  @Column({ type: 'int', nullable: false })
   movieId: number;
 }
