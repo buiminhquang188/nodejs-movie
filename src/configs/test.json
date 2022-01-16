@@ -1,10 +1,10 @@
 {
     "env": "development",
     "dbConfig": {
-        "host": "btvwtafwedbsiys45obc-mysql.services.clever-cloud.com",
-        "user": "uedxpi9tyeprxoik",
-        "password": "uedxpi9tyeprxoik",
-        "database": "btvwtafwedbsiys45obc"
+        "host": "18.140.196.18",
+        "user": "admin",
+        "password": "quangbui180800",
+        "database": "movie_booking"
     },
     "secretKey": "MOVIE_NODEJS18",
     "log": {

@@ -1,6 +1,7 @@
 import { IsNotEmpty } from 'class-validator';
-import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, VersionColumn, DeleteDateColumn } from 'typeorm';
 import { User } from '@interfaces/users.interface';
+import { Roles } from '@/utils/enum';
 
 @Entity()
 @Unique(['email'])
@@ -20,24 +21,23 @@ export class UserEntity implements User {
   @IsNotEmpty()
   password: string;
 
-  @Column({ type: 'char', length: 6, nullable: false })
+  @Column({ type: 'char', default: Roles.USER, length: 6, nullable: false })
   @IsNotEmpty()
   roleID: string;
 
-  @Column({ type: 'int', nullable: false })
-  @IsNotEmpty()
+  @DeleteDateColumn()
+  deletedAt: Date;
+
+  @Column({ nullable: true })
   createdBy: number;
 
-  @Column({ nullable: false })
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'int' })
-  @IsNotEmpty()
-  updateBy: number;
+  @Column({ nullable: true })
+  updatedBy: number;
 
-  @Column()
-  @UpdateDateColumn()
+  @UpdateDateColumn({ nullable: true })
   updatedAt: Date;
 
   @VersionColumn()

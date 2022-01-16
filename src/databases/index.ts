@@ -5,7 +5,7 @@ import { dbConfig } from '@interfaces/db.interface';
 
 const { host, user, password, database }: dbConfig = config.get('dbConfig');
 export const dbConnection: ConnectionOptions = {
-  type: 'mysql',
+  type: 'mariadb',
   host: host,
   port: 3306,
   username: user,
