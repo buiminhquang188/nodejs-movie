@@ -3,7 +3,7 @@ import request from 'supertest';
 import { createConnection, getRepository } from 'typeorm';
 import App from '@/app';
 import { dbConnection } from '@databases';
-import { CreateUserDto } from '@dtos/users.dto';
+import { UserCreateDto } from '@dtos/users.dto';
 import UserRoute from '@routes/users.route';
 
 beforeAll(async () => {
@@ -65,7 +65,7 @@ describe('Testing Users', () => {
 
   describe('[POST] /users', () => {
     it('response Create user', async () => {
-      const userData: CreateUserDto = {
+      const userData: UserCreateDto = {
         email: 'test@email.com',
         password: 'q1w2e3r4!',
       };
@@ -89,7 +89,7 @@ describe('Testing Users', () => {
   describe('[PUT] /users/:id', () => {
     it('response Update user', async () => {
       const userId = 1;
-      const userData: CreateUserDto = {
+      const userData: UserCreateDto = {
         email: 'test@email.com',
         password: '1q2w3e4r!',
       };

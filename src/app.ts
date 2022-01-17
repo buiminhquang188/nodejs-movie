@@ -92,6 +92,21 @@ class App {
           throw new HttpException(httpStatus.UNAUTHORIZED, error.message);
         }
       },
+      currentUserChecker: async (action: Action) => {
+        try {
+          const token: string = action.request.header('Authorization')?.split('Bearer ')[1] || null;
+          const secretKey: string = config.get('secretKey');
+          const verificationResponse = jwt.verify(token, secretKey) as DataStoredInToken;
+          const userId = verificationResponse.id;
+
+          const userRepository = getRepository(UserEntity);
+          const findUser: UserEntity = await userRepository.findOne(userId);
+
+          return findUser;
+        } catch (error) {
+          return null;
+        }
+      },
     });
   }
 

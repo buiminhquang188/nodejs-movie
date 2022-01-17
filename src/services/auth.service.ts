@@ -2,53 +2,51 @@ import bcrypt from 'bcrypt';
 import config from 'config';
 import jwt from 'jsonwebtoken';
 import { getRepository } from 'typeorm';
-import { CreateUserDto } from '@dtos/users.dto';
+import { UserCreateDto, LoginUserDto } from '@dtos/users.dto';
 import { UserEntity } from '@entity/users.entity';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { User } from '@interfaces/users.interface';
 import { isEmpty } from '@utils/util';
 import { Roles } from '@/utils/enum';
+import httpStatus from 'http-status';
 
 class AuthService {
   public users = UserEntity;
 
-  public async signup(userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, 'Request is empty');
+  public async signup(userData: UserCreateDto): Promise<User> {
+    if (isEmpty(userData)) throw new HttpException(httpStatus.BAD_REQUEST, 'Request is empty');
 
     const userRepository = getRepository(this.users);
     const findUser: User = await userRepository.findOne({ where: { email: userData.email } });
-    if (findUser) throw new HttpException(409, `You're email ${userData.email} already exists`);
+    if (findUser) throw new HttpException(httpStatus.CONFLICT, `You're email ${userData.email} already exists`);
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const createUserData: User = await userRepository.save({ ...userData, password: hashedPassword, roleID: Roles.USER });
     return createUserData;
   }
 
-  public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+  public async login(userData: LoginUserDto): Promise<{ tokenData: TokenData }> {
+    if (isEmpty(userData)) throw new HttpException(httpStatus.BAD_REQUEST, 'Request is empty');
 
     const userRepository = getRepository(this.users);
     const findUser: User = await userRepository.findOne({ where: { email: userData.email } });
-    if (!findUser) throw new HttpException(409, `You're email ${userData.email} not found`);
+    if (!findUser) throw new HttpException(httpStatus.CONFLICT, `You're email ${userData.email} not found`);
 
     const isPasswordMatching: boolean = await bcrypt.compare(userData.password, findUser.password);
-    if (!isPasswordMatching) throw new HttpException(409, "You're password not matching");
+    if (!isPasswordMatching) throw new HttpException(httpStatus.CONFLICT, "You're password not matching");
 
     const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
 
-    return { cookie, findUser };
+    return { tokenData };
   }
 
-  public async logout(userData: User): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+  public async logout(userData: User): Promise<void> {
+    if (isEmpty(userData)) throw new HttpException(httpStatus.BAD_REQUEST, "You're not user");
 
     const userRepository = getRepository(this.users);
-    const findUser: User = await userRepository.findOne({ where: { email: userData.email, password: userData.password } });
-    if (!findUser) throw new HttpException(409, "You're not user");
-
-    return findUser;
+    const findUser: User = await userRepository.findOne({ where: { email: userData.email } });
+    if (!findUser) throw new HttpException(httpStatus.CONFLICT, "You're not user");
   }
 
   public createToken(user: User): TokenData {

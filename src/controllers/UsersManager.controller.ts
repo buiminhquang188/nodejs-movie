@@ -1,65 +1,71 @@
 import { NextFunction, Request, Response } from 'express';
-import { CreateUserDto } from '@dtos/users.dto';
+import { UserCreateDto, UpdateUserDto, CreateUserDto } from '@dtos/users.dto';
 import { User } from '@interfaces/users.interface';
 import userService from '@services/users.service';
+import { Authorized, Body, ContentType, Controller, CurrentUser, Delete, Get, Param, Post, Put } from 'routing-controllers';
+import { OpenAPI } from 'routing-controllers-openapi';
+import { Roles } from '@/utils/enum';
 
+@Controller()
+@OpenAPI({
+  security: [{ BearerAuth: [] }],
+})
 class UsersManagerController {
   public userService = new userService();
 
-  public getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const findAllUsersData: User[] = await this.userService.findAllUser();
+  @Get('/users')
+  @Authorized()
+  @ContentType('application/json')
+  async getUsers(): Promise<{ data: User[]; message: string }> {
+    const findAllUsersData: User[] = await this.userService.findAllUser();
 
-      res.status(200).json({ data: findAllUsersData, message: 'findAll' });
-    } catch (error) {
-      next(error);
-    }
-  };
+    return { data: findAllUsersData, message: 'findAll' };
+  }
 
-  public getUserById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = Number(req.params.id);
-      const findOneUserData: User = await this.userService.findUserById(userId);
+  @Get('/users/:id')
+  @Authorized()
+  @ContentType('application/json')
+  async getUserById(@Param('id') userId: number): Promise<{ data: User; message: string }> {
+    const findOneUserData: User = await this.userService.findUserById(userId);
 
-      res.status(200).json({ data: findOneUserData, message: 'findOne' });
-    } catch (error) {
-      next(error);
-    }
-  };
+    return { data: findOneUserData, message: 'findOne' };
+  }
 
-  public createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userData: CreateUserDto = req.body;
-      const createUserData: User = await this.userService.createUser(userData);
+  @Post('/users')
+  @Authorized()
+  @ContentType('application/json')
+  async createUser(@Body() userData: CreateUserDto, @CurrentUser() currentUser: User): Promise<{ data: User; message: string }> {
+    const createUserData: User = await this.userService.createUser(userData, currentUser);
 
-      res.status(201).json({ data: createUserData, message: 'created' });
-    } catch (error) {
-      next(error);
-    }
-  };
+    return { data: createUserData, message: 'created' };
+  }
 
-  public updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = Number(req.params.id);
-      const userData: CreateUserDto = req.body;
-      const updateUserData: User = await this.userService.updateUser(userId, userData);
+  @Put('/users')
+  @Authorized()
+  @ContentType('application/json')
+  async updateUser(@Body() userData: UpdateUserDto, @CurrentUser() currentUser: User): Promise<{ data: User; message: string }> {
+    const updateUserData: User = await this.userService.updateUser(userData, currentUser);
 
-      res.status(200).json({ data: updateUserData, message: 'updated' });
-    } catch (error) {
-      next(error);
-    }
-  };
+    return { data: updateUserData, message: 'updated' };
+  }
 
-  public deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = Number(req.params.id);
-      const deleteUserData: User = await this.userService.deleteUser(userId);
+  @Delete('/users/:id')
+  @Authorized()
+  @ContentType('application/json')
+  async deleteUser(@Param('id') userId: number, @CurrentUser() currentUser: User): Promise<{ data: User; message: string }> {
+    const deleteUserData: User = await this.userService.deleteUser(userId, currentUser);
 
-      res.status(200).json({ data: deleteUserData, message: 'deleted' });
-    } catch (error) {
-      next(error);
-    }
-  };
+    return { data: deleteUserData, message: 'deleted' };
+  }
+
+  @Post('/users/:id')
+  @Authorized()
+  @ContentType('application/json')
+  async resetPassword(@Param('id') userId: number): Promise<{ data: User; message: string }> {
+    const resetPasswordData: User = await this.userService.resetPassword(userId);
+
+    return { data: resetPasswordData, message: 'reset password' };
+  }
 }
 
 export default UsersManagerController;

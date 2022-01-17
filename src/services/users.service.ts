@@ -1,10 +1,11 @@
 import bcrypt from 'bcrypt';
 import { getRepository } from 'typeorm';
-import { CreateUserDto } from '@dtos/users.dto';
+import { UserCreateDto, UpdateUserDto, CreateUserDto } from '@dtos/users.dto';
 import { UserEntity } from '@entity/users.entity';
 import { HttpException } from '@exceptions/HttpException';
 import { User } from '@interfaces/users.interface';
 import { isEmpty } from '@utils/util';
+import httpStatus from 'http-status';
 
 class UserService {
   public users = UserEntity;
@@ -16,51 +17,64 @@ class UserService {
   }
 
   public async findUserById(userId: number): Promise<User> {
-    if (isEmpty(userId)) throw new HttpException(400, "You're not userId");
-
+    if (isEmpty(userId)) throw new HttpException(httpStatus.BAD_REQUEST, 'ID must not empty');
     const userRepository = getRepository(this.users);
     const findUser: User = await userRepository.findOne({ where: { id: userId } });
-    if (!findUser) throw new HttpException(409, "You're not user");
+    if (!findUser) throw new HttpException(httpStatus.CONFLICT, 'User not found or has been deleted');
 
     return findUser;
   }
 
-  public async createUser(userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+  public async createUser(userData: CreateUserDto, currentUser: User): Promise<User> {
+    if (isEmpty(userData)) throw new HttpException(httpStatus.BAD_REQUEST, 'Request must not empty');
 
     const userRepository = getRepository(this.users);
-    const findUser: User = await userRepository.findOne({ where: { email: userData.email } });
-    if (findUser) throw new HttpException(409, `You're email ${userData.email} already exists`);
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const createUserData: User = await userRepository.save({ ...userData, password: hashedPassword });
-
+    const hashedPassword = await bcrypt.hash('newuser', 10);
+    const createUserData: User = await userRepository.save({ ...userData, password: hashedPassword, createdBy: currentUser.id });
     return createUserData;
   }
 
-  public async updateUser(userId: number, userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, "You're not userData");
+  public async updateUser(userData: UpdateUserDto, currentUser: User): Promise<User> {
+    if (isEmpty(userData)) throw new HttpException(httpStatus.BAD_REQUEST, 'Request must not empty');
 
     const userRepository = getRepository(this.users);
-    const findUser: User = await userRepository.findOne({ where: { id: userId } });
-    if (!findUser) throw new HttpException(409, "You're not user");
+    const findUser: User = await userRepository.findOne({ where: { id: userData.id } });
+    if (!findUser) throw new HttpException(httpStatus.CONFLICT, 'User not found or has been deleted');
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    await userRepository.update(userId, { ...userData, password: hashedPassword });
+    await userRepository.update(userData.id, { ...userData, updatedBy: currentUser.id });
 
-    const updateUser: User = await userRepository.findOne({ where: { id: userId } });
+    const updateUser: User = await userRepository.findOne({ where: { id: userData.id } });
     return updateUser;
   }
 
-  public async deleteUser(userId: number): Promise<User> {
-    if (isEmpty(userId)) throw new HttpException(400, "You're not userId");
+  public async deleteUser(userId: number, currentUser: User): Promise<User> {
+    if (isEmpty(userId)) throw new HttpException(httpStatus.BAD_REQUEST, 'ID must not empty');
 
     const userRepository = getRepository(this.users);
     const findUser: User = await userRepository.findOne({ where: { id: userId } });
-    if (!findUser) throw new HttpException(409, "You're not user");
+    if (!findUser) throw new HttpException(httpStatus.CONFLICT, 'User not found or has been deleted');
 
-    await userRepository.delete({ id: userId });
-    return findUser;
+    await userRepository.update(userId, { updatedBy: currentUser.id });
+    await userRepository.softDelete({ id: userId });
+
+    const deletedUser: User = await userRepository.findOne({ where: { id: userId } });
+
+    return deletedUser;
+  }
+
+  public async resetPassword(userId: number): Promise<User> {
+    if (isEmpty(userId)) throw new HttpException(httpStatus.BAD_REQUEST, 'ID must not empty');
+
+    const userRepository = getRepository(this.users);
+    const findUser: User = await userRepository.findOne({ where: { id: userId } });
+    if (!findUser) throw new HttpException(httpStatus.CONFLICT, 'User not found or has been deleted');
+
+    const hashedPassword = await bcrypt.hash('newuser', 10);
+    await userRepository.update(userId, { password: hashedPassword });
+
+    const updateUser: User = await userRepository.findOne({ where: { id: userId } });
+    return updateUser;
   }
 }
 
